@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Google Forms Clone{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>My Forms</h2>
+    <a href="{{ url_for('create_form') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Create New Form
+    </a>
+</div>
+
+{% if forms %}
+    <div class="row">
+        {% for form in forms %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ form.title }}</h5>
+                        <p class="card-text text-muted">{{ form.description or 'No description' }}</p>
+                        <p class="card-text">
+                            <small class="text-muted">Created: {{ form.created_at.strftime('%Y-%m-%d') }}</small>
+                        </p>
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('view_form', form_id=form.id) }}" class="btn btn-outline-primary">View</a>
+                            <a href="{{ url_for('edit_form', form_id=form.id) }}" class="btn btn-outline-secondary">Edit</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <h3>No forms yet</h3>
+        <p class="text-muted">Create your first form to get started!</p>
+        <a href="{{ url_for('create_form') }}" class="btn btn-primary">Create Form</a>
+    </div>
+{% endif %}
+{% endblock %} 
