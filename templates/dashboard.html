@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Google Forms Clone{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Your Forms</h2>
+        <div>
+            <a href="{{ url_for('create_form') }}" class="btn btn-primary me-2">Create New Form</a>
+            <a href="{{ url_for('upload_pdf') }}" class="btn btn-success">Generate from PDF</a>
+        </div>
+    </div>
+    
+    {% if forms %}
+        <div class="row">
+            {% for form in forms %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ form.title }}</h5>
+                        <p class="card-text">{{ form.description }}</p>
+                        <p class="card-text"><small class="text-muted">Created: {{ form.created_at.strftime('%Y-%m-%d') }}</small></p>
+                        <div class="btn-group">
+                            <a href="{{ url_for('edit_form', form_id=form.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a href="{{ url_for('view_form', form_id=form.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="confirmDelete({{ form.id }})">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            You haven't created any forms yet. Click "Create New Form" to get started or "Generate from PDF" to create a form from a PDF file.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this form? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(formId) {
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const deleteForm = document.getElementById('deleteForm');
+    deleteForm.action = `/form/${formId}/delete`;
+    deleteModal.show();
+}
+</script>
+{% endblock %} 

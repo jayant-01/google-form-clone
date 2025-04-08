@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ form.title }} - Google Forms Clone{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="mb-1">{{ form.title }}</h2>
+                {% if form.description %}
+                    <p class="text-muted mb-0">{{ form.description }}</p>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="POST" id="response-form">
+                    {% for question in form.questions|sort(attribute='order') %}
+                    <div class="mb-4">
+                        <div class="question-container">
+                            <label class="form-label fw-bold mb-2" for="q-{{ question.id }}">
+                                {{ question.question_text }}
+                                {% if question.required %}
+                                    <span class="text-danger">*</span>
+                                {% endif %}
+                            </label>
+
+                            {% if question.question_type == 'text' %}
+                                <input type="text" class="form-control"
+                                       id="q-{{ question.id }}"
+                                       name="q-{{ question.id }}"
+                                       {% if question.required %}required{% endif %}
+                                       aria-label="{{ question.question_text }}">
+
+                            {% elif question.question_type == 'multiple_choice' %}
+                                <div class="form-group">
+                                    {% for option in question.options.split(',') %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="q-{{ question.id }}"
+                                                   id="q-{{ question.id }}-{{ loop.index }}"
+                                                   value="{{ option.strip() }}"
+                                                   {% if question.required %}required{% endif %}>
+                                            <label class="form-check-label" for="q-{{ question.id }}-{{ loop.index }}">
+                                                {{ option.strip() }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                            {% elif question.question_type == 'checkbox' %}
+                                <div class="form-group">
+                                    {% for option in question.options.split(',') %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="q-{{ question.id }}[]"
+                                                   id="q-{{ question.id }}-{{ loop.index }}"
+                                                   value="{{ option.strip() }}">
+                                            <label class="form-check-label" for="q-{{ question.id }}-{{ loop.index }}">
+                                                {{ option.strip() }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('response-form');
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const response = {};
+        
+        for (const [key, value] of formData.entries()) {
+            if (key.endsWith('[]')) {
+                // Handle checkbox groups
+                const questionId = key.slice(2, -2);
+                if (!response[questionId]) {
+                    response[questionId] = [];
+                }
+                response[questionId].push(value);
+            } else {
+                // Handle single value inputs
+                const questionId = key.slice(2);
+                response[questionId] = value;
+            }
+        }
+        
+        try {
+            const submitResponse = await fetch(`/form/${formId}/submit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ answers: response })
+            });
+
+            if (submitResponse.ok) {
+                alert('Form submitted successfully!');
+                window.location.href = '/thank-you';
+            } else {
+                alert('Error submitting form');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error submitting form');
+        }
+    });
+});
+</script>
+{% endblock %} 

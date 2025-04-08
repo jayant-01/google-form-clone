@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Google Forms Clone{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 mb-4">Create and Share Forms Easily</h1>
+    <p class="lead mb-4">A simple and powerful tool to create, share, and collect responses to your forms.</p>
+    
+    {% if current_user.is_authenticated %}
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="{{ url_for('create_form') }}" class="btn btn-primary btn-lg px-4 gap-3">Create New Form</a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-lg px-4">View My Forms</a>
+        </div>
+    {% else %}
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="{{ url_for('signup') }}" class="btn btn-primary btn-lg px-4 gap-3">Get Started</a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-lg px-4">Sign In</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">Easy to Use</h3>
+                <p class="card-text">Create beautiful forms with our intuitive interface. No technical knowledge required.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">Multiple Question Types</h3>
+                <p class="card-text">Choose from various question types including text, multiple choice, and more.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">Real-time Responses</h3>
+                <p class="card-text">Get instant notifications and view responses as they come in.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
