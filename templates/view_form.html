@@ -1,127 +1,223 @@
 {% extends "base.html" %}
-
 {% block title %}{{ form.title }} - Google Forms Clone{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h2 class="mb-1">{{ form.title }}</h2>
-                {% if form.description %}
-                    <p class="text-muted mb-0">{{ form.description }}</p>
-                {% endif %}
-            </div>
-            <div class="card-body">
-                <form method="POST" id="response-form">
-                    {% for question in form.questions|sort(attribute='order') %}
-                    <div class="mb-4">
-                        <div class="question-container">
-                            <label class="form-label fw-bold mb-2" for="q-{{ question.id }}">
-                                {{ question.question_text }}
-                                {% if question.required %}
-                                    <span class="text-danger">*</span>
-                                {% endif %}
-                            </label>
-
-                            {% if question.question_type == 'text' %}
-                                <input type="text" class="form-control"
-                                       id="q-{{ question.id }}"
-                                       name="q-{{ question.id }}"
-                                       {% if question.required %}required{% endif %}
-                                       aria-label="{{ question.question_text }}">
-
-                            {% elif question.question_type == 'multiple_choice' %}
-                                <div class="form-group">
-                                    {% for option in question.options.split(',') %}
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio"
-                                                   name="q-{{ question.id }}"
-                                                   id="q-{{ question.id }}-{{ loop.index }}"
-                                                   value="{{ option.strip() }}"
-                                                   {% if question.required %}required{% endif %}>
-                                            <label class="form-check-label" for="q-{{ question.id }}-{{ loop.index }}">
-                                                {{ option.strip() }}
-                                            </label>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                            {% elif question.question_type == 'checkbox' %}
-                                <div class="form-group">
-                                    {% for option in question.options.split(',') %}
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox"
-                                                   name="q-{{ question.id }}[]"
-                                                   id="q-{{ question.id }}-{{ loop.index }}"
-                                                   value="{{ option.strip() }}">
-                                            <label class="form-check-label" for="q-{{ question.id }}-{{ loop.index }}">
-                                                {{ option.strip() }}
-                                            </label>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+  <div class="col-md-8">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h2 class="mb-1">{{ form.title }}</h2>
+        {% if form.description %}
+          <p class="text-muted mb-0">{{ form.description }}</p>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <form method="POST" id="response-form" enctype="multipart/form-data">
+          {% for question in form.questions|sort(attribute='order') %}
+          <div class="mb-4">
+            <label class="form-label fw-bold mb-2" for="q-{{ question.id }}">
+              {{ question.question_text }}
+              {% if question.required %}
+                <span class="text-danger">*</span>
+              {% endif %}
+            </label>
+            {% set qtype = question.question_type %}
+            
+            {# Standard input types #}
+            {% if qtype in ['text', 'password', 'email', 'number', 'tel', 'url', 'search', 'date', 'datetime-local', 'month', 'week', 'time', 'color', 'range'] %}
+              <input type="{{ qtype }}" class="form-control" id="q-{{ question.id }}"
+                     name="q-{{ question.id }}" {% if question.required %}required{% endif %}
+                     aria-label="{{ question.question_text }}">
+            
+            {% elif qtype == 'file' %}
+              <input type="file" class="form-control" id="q-{{ question.id }}"
+                     name="q-{{ question.id }}" {% if question.required %}required{% endif %}
+                     aria-label="{{ question.question_text }}">
+            
+            {% elif qtype == 'checkbox' %}
+              {% if question.options %}
+                {% for option in question.options.split(',') %}
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox"
+                         name="q-{{ question.id }}[]" id="q-{{ question.id }}-{{ loop.index }}"
+                         value="{{ option.strip() }}">
+                  <label class="form-check-label" for="q-{{ question.id }}-{{ loop.index }}">
+                    {{ option.strip() }}
+                  </label>
+                </div>
+                {% endfor %}
+              {% endif %}
+            
+            {% elif qtype in ['radio', 'multiple_choice'] %}
+              {% if question.options %}
+                {% for option in question.options.split(',') %}
+                <div class="form-check">
+                  <input class="form-check-input" type="radio"
+                         name="q-{{ question.id }}" id="q-{{ question.id }}-{{ loop.index }}"
+                         value="{{ option.strip() }}" {% if question.required %}required{% endif %}>
+                  <label class="form-check-label" for="q-{{ question.id }}-{{ loop.index }}">
+                    {{ option.strip() }}
+                  </label>
+                </div>
+                {% endfor %}
+              {% endif %}
+            
+            {% elif qtype == 'scale' %}
+              {% if question.options %}
+                {% set parts = question.options.split('|') %}
+                {% if parts|length >= 1 %}
+                  {% set max_scale = parts[0]|int %}
+                  {% set left_label = parts[1] if parts|length > 1 else '' %}
+                  {% set right_label = parts[2] if parts|length > 2 else '' %}
+            
+                  <!-- Render scale with left/right labels on one row -->
+                  <div class="row align-items-center text-center">
+                    <!-- Left label -->
+                    <div class="col-auto text-end pe-0" style="min-width: 120px;">
+                      <small>{{ left_label }}</small>
+                    </div>
+            
+                    <!-- Scale radio buttons -->
+                    <div class="col">
+                      <div class="d-flex justify-content-center">
+                        {% for val in range(1, max_scale + 1) %}
+                        <div class="form-check form-check-inline mx-2">
+                          <input class="form-check-input" type="radio"
+                                 name="q-{{ question.id }}"
+                                 id="q-{{ question.id }}-scale-{{ val }}"
+                                 value="{{ val }}"
+                                 {% if question.required %}required{% endif %}>
+                          <label class="form-check-label" for="q-{{ question.id }}-scale-{{ val }}">
+                            {{ val }}
+                          </label>
                         </div>
+                        {% endfor %}
+                      </div>
                     </div>
+            
+                    <!-- Right label -->
+                    <div class="col-auto text-start ps-0" style="min-width: 120px;">
+                      <small>{{ right_label }}</small>
+                    </div>
+                  </div>
+                {% endif %}
+              {% endif %}
+            
+            {% elif qtype == 'matrix' %}
+              {% if question.options %}
+                {# Expecting question.options to be a JSON string with keys "rows" and "columns" #}
+                {% set matrix_data = question.options | fromjson %}
+                {% set rows = matrix_data.rows.split(',') %}
+                {% set cols = matrix_data.columns.split(',') %}
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Data Type</th>
+                      {% for col in cols %}
+                        <th class="text-center">{{ col.strip() }}</th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in rows %}
+                      {% set row_index = loop.index %}
+                      <tr>
+                        <td>{{ row.strip() }}</td>
+                        {% for col in cols %}
+                        <td class="text-center">
+                          <input type="radio"
+                                 name="q-{{ question.id }}-{{ row_index }}" 
+                                 value="{{ col.strip() }}"
+                                 {% if question.required %}required{% endif %}>
+                        </td>
+                        {% endfor %}
+                      </tr>
                     {% endfor %}
+                  </tbody>
+                </table>
+              {% endif %}
+            
+            {% elif qtype == 'hidden' %}
+              <input type="hidden" name="q-{{ question.id }}" value="hiddenValue">
+            
+            {% elif qtype == 'image' %}
+              <input type="image" src="/static/images/placeholder.jpg"
+                     alt="{{ question.question_text }}" name="q-{{ question.id }}">
+            
+            {% else %}
+              <!-- Fallback: render as text input -->
+              <input type="text" class="form-control" id="q-{{ question.id }}"
+                     name="q-{{ question.id }}" {% if question.required %}required{% endif %}
+                     aria-label="{{ question.question_text }}">
+            {% endif %}
+          </div>
+          {% endfor %}
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// ------------------- DRAG & DROP LOGIC -------------------
 document.addEventListener('DOMContentLoaded', function() {
+    const draggableItems = document.querySelectorAll('.draggable');
+    const dropZones = document.querySelectorAll('.dragdrop-zone');
+
+    draggableItems.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', item.textContent.trim());
+        });
+    });
+
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Allow drop
+        });
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const text = e.dataTransfer.getData('text/plain');
+            const li = document.createElement('li');
+            li.className = 'list-group-item draggable';
+            li.textContent = text;
+            zone.appendChild(li);
+
+            const allLists = document.querySelectorAll('.dragdrop-items, .dragdrop-zone');
+            allLists.forEach(list => {
+                const children = list.querySelectorAll('li');
+                children.forEach(child => {
+                    if (child !== li && child.textContent.trim() === text.trim()) {
+                        child.remove();
+                    }
+                });
+            });
+        });
+    });
+
+    // -------------- FORM SUBMISSION --------------
     const form = document.getElementById('response-form');
-    
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(form);
-        const response = {};
-        
-        for (const [key, value] of formData.entries()) {
-            if (key.endsWith('[]')) {
-                // Handle checkbox groups
-                const questionId = key.slice(2, -2);
-                if (!response[questionId]) {
-                    response[questionId] = [];
-                }
-                response[questionId].push(value);
-            } else {
-                // Handle single value inputs
-                const questionId = key.slice(2);
-                response[questionId] = value;
-            }
-        }
-        
-        try {
-            const submitResponse = await fetch(`/form/${formId}/submit`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ answers: response })
+    form.addEventListener('submit', function(e) {
+        dropZones.forEach(zone => {
+            const questionId = zone.getAttribute('data-question-id');
+            const zoneName = zone.getAttribute('data-zone');
+            const items = [];
+            zone.querySelectorAll('li').forEach(li => {
+                items.push(li.textContent.trim());
             });
 
-            if (submitResponse.ok) {
-                alert('Form submitted successfully!');
-                window.location.href = '/thank-you';
-            } else {
-                alert('Error submitting form');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error submitting form');
-        }
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `q-${questionId}[${zoneName}]`;
+            input.value = items.join(',');
+            form.appendChild(input);
+        });
     });
 });
 </script>
-{% endblock %} 
+{% endblock %}

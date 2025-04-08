@@ -1,79 +1,117 @@
 {% extends "base.html" %}
-
 {% block title %}Edit Form - Google Forms Clone{% endblock %}
 
 {% block content %}
 <div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3>{{ form.title }}</h3>
-                <p class="text-muted mb-0">{{ form.description or 'No description' }}</p>
-            </div>
+  <div class="col-md-8 mx-auto">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h3>{{ form.title }}</h3>
+        <p class="text-muted mb-0">{{ form.description or 'No description' }}</p>
+      </div>
+      <div class="card-body">
+        <div id="questions-container">
+          {% for question in form.questions %}
+          <div class="question-card card mb-3" data-question-id="{{ question.id }}">
             <div class="card-body">
-                <div id="questions-container">
-                    {% for question in form.questions %}
-                    <div class="question-card card mb-3" data-question-id="{{ question.id }}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <input type="text" class="form-control form-control-lg question-text" 
-                                       value="{{ question.question_text }}" placeholder="Question text"
-                                       aria-label="Question text">
-                                <button class="btn btn-outline-danger ms-2 delete-question"
-                                        title="Delete question">
-                                    <i class="bi bi-trash" aria-hidden="true"></i>
-                                    <span class="visually-hidden">Delete question</span>
-                                </button>
-                            </div>
-                            <div class="mb-3">
-                                <select class="form-select question-type" aria-label="Question type">
-                                    <option value="text" {% if question.question_type == 'text' %}selected{% endif %}>Text</option>
-                                    <option value="multiple_choice" {% if question.question_type == 'multiple_choice' %}selected{% endif %}>Multiple Choice</option>
-                                    <option value="checkbox" {% if question.question_type == 'checkbox' %}selected{% endif %}>Checkbox</option>
-                                </select>
-                            </div>
-                            <div class="options-container {% if question.question_type != 'multiple_choice' and question.question_type != 'checkbox' %}d-none{% endif %}">
-                                {% if question.options %}
-                                    {% for option in question.options.split(',') %}
-                                    <div class="input-group mb-2">
-                                        <input type="text" class="form-control option-text" 
-                                               value="{{ option.strip() }}" 
-                                               placeholder="Option text"
-                                               aria-label="Option text">
-                                        <button class="btn btn-outline-danger delete-option"
-                                                title="Delete option">
-                                            <i class="bi bi-x" aria-hidden="true"></i>
-                                            <span class="visually-hidden">Delete option</span>
-                                        </button>
-                                    </div>
-                                    {% endfor %}
-                                {% endif %}
-                                <button class="btn btn-outline-secondary btn-sm add-option">
-                                    <i class="bi bi-plus" aria-hidden="true"></i> Add Option
-                                </button>
-                            </div>
-                            <div class="form-check mt-3">
-                                <input class="form-check-input question-required" type="checkbox" 
-                                       {% if question.required %}checked{% endif %}
-                                       id="required-{{ question.id }}">
-                                <label class="form-check-label" for="required-{{ question.id }}">Required</label>
-                            </div>
-                        </div>
+              <!-- Question text input -->
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <input type="text" class="form-control form-control-lg question-text" 
+                       value="{{ question.question_text }}" placeholder="Question text"
+                       aria-label="Question text">
+                <button class="btn btn-outline-danger ms-2 delete-question" title="Delete question">
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                  <span class="visually-hidden">Delete question</span>
+                </button>
+              </div>
+
+              <!-- Select question type -->
+              <div class="mb-3">
+                <select class="form-select question-type" aria-label="Question type">
+                  <option value="text" {% if question.question_type == 'text' %}selected{% endif %}>Text</option>
+                  <option value="password" {% if question.question_type == 'password' %}selected{% endif %}>Password</option>
+                  <option value="email" {% if question.question_type == 'email' %}selected{% endif %}>Email</option>
+                  <option value="number" {% if question.question_type == 'number' %}selected{% endif %}>Number</option>
+                  <option value="tel" {% if question.question_type == 'tel' %}selected{% endif %}>Telephone</option>
+                  <option value="url" {% if question.question_type == 'url' %}selected{% endif %}>URL</option>
+                  <option value="search" {% if question.question_type == 'search' %}selected{% endif %}>Search</option>
+                  <option value="date" {% if question.question_type == 'date' %}selected{% endif %}>Date</option>
+                  <option value="datetime-local" {% if question.question_type == 'datetime-local' %}selected{% endif %}>Datetime</option>
+                  <option value="month" {% if question.question_type == 'month' %}selected{% endif %}>Month</option>
+                  <option value="week" {% if question.question_type == 'week' %}selected{% endif %}>Week</option>
+                  <option value="time" {% if question.question_type == 'time' %}selected{% endif %}>Time</option>
+                  <option value="color" {% if question.question_type == 'color' %}selected{% endif %}>Color</option>
+                  <option value="file" {% if question.question_type == 'file' %}selected{% endif %}>File</option>
+                  <option value="checkbox" {% if question.question_type == 'checkbox' %}selected{% endif %}>Checkbox</option>
+                  <option value="radio" {% if question.question_type == 'radio' or question.question_type == 'multiple_choice' %}selected{% endif %}>Radio/Multiple Choice</option>
+                  <option value="range" {% if question.question_type == 'range' %}selected{% endif %}>Range</option>
+                  <option value="hidden" {% if question.question_type == 'hidden' %}selected{% endif %}>Hidden</option>
+                  <option value="image" {% if question.question_type == 'image' %}selected{% endif %}>Image</option>
+                  <!-- NEW TYPES -->
+                  <option value="scale" {% if question.question_type == 'scale' %}selected{% endif %}>Scale (Likert)</option>
+                  <option value="matrix" {% if question.question_type == 'matrix' %}selected{% endif %}>Matrix</option>
+                </select>
+              </div>
+              <!-- Options container -->
+              <div class="options-container mb-3">
+                {% if question.question_type in ['radio', 'multiple_choice', 'checkbox'] %}
+                  {% if question.options %}
+                    {% for option in question.options.split(',') %}
+                    <div class="input-group mb-2">
+                      <input type="text" class="form-control option-text" 
+                             value="{{ option.strip() }}" 
+                             placeholder="Option text" aria-label="Option text">
+                      <button class="btn btn-outline-danger delete-option" title="Delete option">
+                        <i class="bi bi-x" aria-hidden="true"></i>
+                        <span class="visually-hidden">Delete option</span>
+                      </button>
                     </div>
                     {% endfor %}
-                </div>
-                
-                <button id="add-question" class="btn btn-outline-primary w-100 mb-3">
-                    <i class="bi bi-plus-lg" aria-hidden="true"></i> Add Question
-                </button>
-                
-                <div class="d-flex justify-content-between">
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
-                    <button id="save-form" class="btn btn-primary">Save Form</button>
-                </div>
+                  {% endif %}
+                  <button class="btn btn-outline-secondary btn-sm add-option">
+                    <i class="bi bi-plus" aria-hidden="true"></i> Add Option
+                  </button>
+
+                {% elif question.question_type == 'scale' %}
+                  <label>Scale Settings (e.g., "<b>5</b>(scale size)|<b>Strongly Disagree</b>(first option)|<b>Strongly Agree</b>(second option)")</label>
+                  <textarea class="form-control scale-options" rows="2"
+                            placeholder='Enter scale details, e.g. "5|Left Label|Right Label"'>{{ question.options or '' }}</textarea>
+
+                {% elif question.question_type == 'matrix' %}
+                    {% set matrix_data = question.options | fromjson if question.options else {'rows': '', 'columns': ''} %}
+                        <label>Matrix Rows (comma-separated)</label>
+                        <textarea class="form-control matrix-rows" rows="2"
+                                      placeholder="Enter each row item separated by commas">{{ matrix_data.rows }}</textarea>
+                        <label class="mt-2">Matrix Columns (comma-separated)</label>
+                        <textarea class="form-control matrix-columns mt-2" rows="2"
+                                      placeholder="Enter each column item separated by commas">{{ matrix_data.columns }}</textarea>
+                        <small class="text-muted">Example: "I'm in,Please Stay Away"</small>
+                {% endif %}
+
+              </div>
+
+              <!-- Required checkbox -->
+              <div class="form-check mt-3">
+                <input class="form-check-input question-required" type="checkbox"
+                       {% if question.required %}checked{% endif %} id="required-{{ question.id }}">
+                <label class="form-check-label" for="required-{{ question.id }}">Required</label>
+              </div>
             </div>
+          </div>
+          {% endfor %}
         </div>
+        
+        <button id="add-question" class="btn btn-outline-primary w-100 mb-3">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i> Add Question
+        </button>
+        
+        <div class="d-flex justify-content-between">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+          <button id="save-form" class="btn btn-primary">Save Form</button>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -84,136 +122,210 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const questionsContainer = document.getElementById('questions-container');
-    const addQuestionBtn = document.getElementById('add-question');
-    const saveFormBtn = document.getElementById('save-form');
-    const formId = "{{ form.id }}";
+  const questionsContainer = document.getElementById('questions-container');
+  const addQuestionBtn = document.getElementById('add-question');
+  const saveFormBtn = document.getElementById('save-form');
+  const formId = "{{ form.id }}";
 
-    // Add new question
-    addQuestionBtn.addEventListener('click', function() {
-        const questionCard = createQuestionCard();
-        questionsContainer.appendChild(questionCard);
-    });
+  // Add new question
+  addQuestionBtn.addEventListener('click', function() {
+    const questionCard = createQuestionCard();
+    questionsContainer.appendChild(questionCard);
+  });
 
-    // Handle question type changes
-    questionsContainer.addEventListener('change', function(e) {
-        if (e.target.classList.contains('question-type')) {
-            const optionsContainer = e.target.closest('.card-body').querySelector('.options-container');
-            if (e.target.value === 'multiple_choice' || e.target.value === 'checkbox') {
-                optionsContainer.classList.remove('d-none');
-            } else {
-                optionsContainer.classList.add('d-none');
-            }
-        }
-    });
+  // Listen for changes on question type to show/hide options area
+  questionsContainer.addEventListener('change', function(e) {
+    if (e.target.classList.contains('question-type')) {
+      const cardBody = e.target.closest('.card-body');
+      const qType = e.target.value;
+      showOrHideOptionFields(cardBody, qType);
+    }
+  });
 
-    // Delete question
-    questionsContainer.addEventListener('click', function(e) {
-        if (e.target.closest('.delete-question')) {
-            e.target.closest('.question-card').remove();
-        }
-        if (e.target.closest('.delete-option')) {
-            e.target.closest('.input-group').remove();
-        }
-        if (e.target.closest('.add-option')) {
-            const optionsContainer = e.target.closest('.options-container');
-            const newOption = createOptionInput();
-            optionsContainer.insertBefore(newOption, e.target.closest('button'));
-        }
-    });
+  // Event delegation for delete question, delete option, and add option
+  questionsContainer.addEventListener('click', function(e) {
+    if (e.target.closest('.delete-question')) {
+      e.target.closest('.question-card').remove();
+    }
+    if (e.target.closest('.delete-option')) {
+      e.target.closest('.input-group').remove();
+    }
+    if (e.target.closest('.add-option')) {
+      const optionsContainer = e.target.closest('.options-container');
+      const newOption = createOptionInput();
+      optionsContainer.insertBefore(newOption, e.target.closest('button'));
+    }
+  });
 
-    // Save form
-    saveFormBtn.addEventListener('click', async function() {
-        const questions = [];
-        document.querySelectorAll('.question-card').forEach((card, index) => {
-            const questionData = {
-                id: card.dataset.questionId || null,
-                question_text: card.querySelector('.question-text').value,
-                question_type: card.querySelector('.question-type').value,
-                required: card.querySelector('.question-required').checked,
-                order: index,
-                options: []
-            };
+  // Save form (send data via fetch to update route)
+  saveFormBtn.addEventListener('click', async function() {
+    const questions = [];
+    document.querySelectorAll('.question-card').forEach((card, index) => {
+      const questionData = {
+        id: card.dataset.questionId || null,
+        question_text: card.querySelector('.question-text').value.trim(),
+        question_type: card.querySelector('.question-type').value,
+        required: card.querySelector('.question-required').checked,
+        order: index,
+        options: null
+      };
 
-            if (questionData.question_type === 'multiple_choice' || questionData.question_type === 'checkbox') {
-                card.querySelectorAll('.option-text').forEach(option => {
-                    if (option.value.trim()) {
-                        questionData.options.push(option.value.trim());
-                    }
-                });
-            }
-
-            questions.push(questionData);
+      const qType = questionData.question_type;
+      if (['radio','multiple_choice','checkbox'].includes(qType)) {
+        const opts = [];
+        card.querySelectorAll('.option-text').forEach(option => {
+          if (option.value.trim()) {
+            opts.push(option.value.trim());
+          }
         });
-
-        try {
-            const response = await fetch(`/form/${formId}/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ questions: questions })
-            });
-
-            if (response.ok) {
-                window.location.href = '/dashboard';
-            } else {
-                alert('Error saving form');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error saving form');
+        questionData.options = opts.join(',');
+      } else if (qType === 'scale') {
+        const textarea = card.querySelector('.scale-options');
+        if (textarea) {
+          questionData.options = textarea.value.trim(); 
         }
+      } else if (qType === 'matrix') {
+        // Retrieve both matrix rows and columns and combine into a JSON string.
+        const rowsTextarea = card.querySelector('.matrix-rows');
+        const colsTextarea = card.querySelector('.matrix-columns');
+        if (rowsTextarea && colsTextarea) {
+          const matrixObj = {
+            rows: rowsTextarea.value.trim(),
+            columns: colsTextarea.value.trim()
+          };
+          questionData.options = JSON.stringify(matrixObj);
+        }
+      }
+      // For other types with no custom options, options remains null.
+      questions.push(questionData);
     });
 
-    function createQuestionCard() {
-        const card = document.createElement('div');
-        card.className = 'question-card card mb-3';
-        const questionId = Date.now(); // Generate a unique ID for the new question
-        card.innerHTML = `
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <input type="text" class="form-control form-control-lg question-text" 
-                           placeholder="Question text" aria-label="Question text">
-                    <button class="btn btn-outline-danger ms-2 delete-question" title="Delete question">
-                        <i class="bi bi-trash" aria-hidden="true"></i>
-                        <span class="visually-hidden">Delete question</span>
-                    </button>
-                </div>
-                <div class="mb-3">
-                    <select class="form-select question-type" aria-label="Question type">
-                        <option value="text">Text</option>
-                        <option value="multiple_choice">Multiple Choice</option>
-                        <option value="checkbox">Checkbox</option>
-                    </select>
-                </div>
-                <div class="options-container d-none">
-                    <button class="btn btn-outline-secondary btn-sm add-option">
-                        <i class="bi bi-plus" aria-hidden="true"></i> Add Option
-                    </button>
-                </div>
-                <div class="form-check mt-3">
-                    <input class="form-check-input question-required" type="checkbox" id="required-${questionId}">
-                    <label class="form-check-label" for="required-${questionId}">Required</label>
-                </div>
-            </div>
-        `;
-        return card;
+    try {
+      const response = await fetch(`/form/${formId}/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ questions: questions })
+      });
+      if (response.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        alert('Error saving form');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error saving form');
     }
+  });
 
-    function createOptionInput() {
-        const div = document.createElement('div');
-        div.className = 'input-group mb-2';
-        div.innerHTML = `
-            <input type="text" class="form-control option-text" 
-                   placeholder="Option text" aria-label="Option text">
-            <button class="btn btn-outline-danger delete-option" title="Delete option">
-                <i class="bi bi-x" aria-hidden="true"></i>
-                <span class="visually-hidden">Delete option</span>
-            </button>
-        `;
-        return div;
+  function createQuestionCard() {
+    const card = document.createElement('div');
+    card.className = 'question-card card mb-3';
+    card.dataset.questionId = '';
+    card.innerHTML = `
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <input type="text" class="form-control form-control-lg question-text" 
+                 placeholder="Question text" aria-label="Question text">
+          <button class="btn btn-outline-danger ms-2 delete-question" title="Delete question">
+            <i class="bi bi-trash" aria-hidden="true"></i>
+            <span class="visually-hidden">Delete question</span>
+          </button>
+        </div>
+        <div class="mb-3">
+          <select class="form-select question-type" aria-label="Question type">
+            <option value="text">Text</option>
+            <option value="password">Password</option>
+            <option value="email">Email</option>
+            <option value="number">Number</option>
+            <option value="tel">Telephone</option>
+            <option value="url">URL</option>
+            <option value="search">Search</option>
+            <option value="date">Date</option>
+            <option value="datetime-local">Datetime</option>
+            <option value="month">Month</option>
+            <option value="week">Week</option>
+            <option value="time">Time</option>
+            <option value="color">Color</option>
+            <option value="file">File</option>
+            <option value="checkbox">Checkbox</option>
+            <option value="radio">Radio/Multiple Choice</option>
+            <option value="range">Range</option>
+            <option value="hidden">Hidden</option>
+            <option value="image">Image</option>
+            <option value="scale">Scale (Likert)</option>
+            <option value="matrix">Matrix</option>
+          </select>
+        </div>
+        <div class="options-container mb-3">
+          <!-- This container updates dynamically based on question type -->
+        </div>
+        <div class="form-check mt-3">
+          <input class="form-check-input question-required" type="checkbox" id="required-${Date.now()}">
+          <label class="form-check-label" for="required-${Date.now()}">Required</label>
+        </div>
+      </div>
+    `;
+    return card;
+  }
+
+  function createOptionInput() {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+      <input type="text" class="form-control option-text" 
+             placeholder="Option text" aria-label="Option text">
+      <button class="btn btn-outline-danger delete-option" title="Delete option">
+        <i class="bi bi-x" aria-hidden="true"></i>
+        <span class="visually-hidden">Delete option</span>
+      </button>
+    `;
+    return div;
+  }
+
+  function showOrHideOptionFields(cardBody, qType) {
+    const optionsContainer = cardBody.querySelector('.options-container');
+    optionsContainer.innerHTML = '';
+    if (['radio','multiple_choice','checkbox'].includes(qType)) {
+      // Default: one input for option and an "Add Option" button.
+      optionsContainer.appendChild(createOptionInput());
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn btn-outline-secondary btn-sm add-option';
+      addBtn.innerHTML = `<i class="bi bi-plus" aria-hidden="true"></i> Add Option`;
+      optionsContainer.appendChild(addBtn);
+    } else if (qType === 'scale') {
+      const label = document.createElement('label');
+      label.textContent = 'Scale Settings (e.g., "5|Left Label|Right Label")';
+      const textarea = document.createElement('textarea');
+      textarea.className = 'form-control scale-options';
+      textarea.rows = 2;
+      textarea.placeholder = 'Enter scale details';
+      optionsContainer.appendChild(label);
+      optionsContainer.appendChild(textarea);
+    } else if (qType === 'matrix') {
+      const rowsLabel = document.createElement('label');
+      rowsLabel.textContent = 'Matrix Rows (comma-separated)';
+      const rowsTextarea = document.createElement('textarea');
+      rowsTextarea.className = 'form-control matrix-rows';
+      rowsTextarea.rows = 2;
+      rowsTextarea.placeholder = 'Enter row items separated by commas';
+
+      const colsLabel = document.createElement('label');
+      colsLabel.textContent = 'Matrix Columns (comma-separated)';
+      colsLabel.className = 'mt-2';
+      const colsTextarea = document.createElement('textarea');
+      colsTextarea.className = 'form-control matrix-columns mt-2';
+      colsTextarea.rows = 2;
+      colsTextarea.placeholder = 'Enter column items separated by commas';
+
+      const exampleText = document.createElement('small');
+      exampleText.className = 'text-muted';
+      exampleText.textContent = 'Example: "I\'m in,Please Stay Away"';
+
+      optionsContainer.append(rowsLabel, rowsTextarea, colsLabel, colsTextarea, exampleText);
     }
+  }
 });
 </script>
-{% endblock %} 
+{% endblock %}

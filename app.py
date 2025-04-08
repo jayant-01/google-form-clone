@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 import PyPDF2
 from werkzeug.utils import secure_filename
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -21,6 +22,14 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Registering the custom 'fromjson' filter
+@app.template_filter('fromjson')
+def fromjson_filter(s):
+    try:
+        return json.loads(s)
+    except (TypeError, ValueError):
+        return {}
 
 # Models
 class User(UserMixin, db.Model):
@@ -135,6 +144,11 @@ def dashboard():
     forms = Form.query.filter_by(user_id=current_user.id).all()
     return render_template('dashboard.html', forms=forms)
 
+@app.route('/terms_conditions')
+@login_required
+def terms_and_conditions():
+    return render_template('term_conditions.html')
+
 @app.route('/create_form', methods=['GET', 'POST'])
 @login_required
 def create_form():
@@ -159,6 +173,44 @@ def edit_form(form_id):
     if form.user_id != current_user.id:
         return redirect(url_for('dashboard'))
     return render_template('edit_form.html', form=form)
+
+@app.route('/form/<int:form_id>/update', methods=['POST'])
+@login_required
+def update_form(form_id):
+    form = Form.query.get_or_404(form_id)
+    if form.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    data = request.get_json()
+    if not data or 'questions' not in data:
+        return jsonify({'error': 'Invalid payload'}), 400
+
+    questions_data = data['questions']
+
+    # Remove existing questions
+    for question in form.questions:
+        db.session.delete(question)
+    db.session.commit()
+
+    # Create new questions
+    for index, q in enumerate(questions_data):
+        options = None
+        if q['question_type'] in ['radio', 'multiple_choice', 'checkbox']:
+            options = q['options']  # already a comma-separated string
+        elif q['question_type'] in ['scale', 'matrix']:
+            options = q['options']  # expected to be provided by the custom input fields (for matrix, a JSON string)
+        new_question = Question(
+            form_id=form_id,
+            question_text=q['question_text'],
+            question_type=q['question_type'],
+            options=options,
+            required=q['required'],
+            order=index
+        )
+        db.session.add(new_question)
+    db.session.commit()
+    return jsonify({'message': 'Form updated successfully'}), 200
+
 
 @app.route('/logout')
 @login_required
