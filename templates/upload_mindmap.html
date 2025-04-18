@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Upload Mindmap Text</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="mindmap_text" class="form-label">Paste your mindmap text here</label>
+                            <textarea class="form-control" id="mindmap_text" name="mindmap_text" rows="15" required></textarea>
+                            <div class="form-text">
+                                Format your mindmap text as follows:<br>
+                                Form Title<br>
+                                &nbsp;&nbsp;Section 1<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;Field Label | text<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;Field Label | dropdown<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Option 1<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Option 2<br>
+                                &nbsp;&nbsp;Section 2<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;Field Label | checkbox<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Option 1<br>
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Option 2
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Generate Form</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

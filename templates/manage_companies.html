@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Companies</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            Add New Company
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Company Name</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="referral_code" class="form-label">Referral Code</label>
+                    <input type="text" class="form-control" id="referral_code" name="referral_code" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Company</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            Existing Companies
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Company Name</th>
+                        <th>Referral Code</th>
+                        <th>Referral Link</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
+                    <tr>
+                        <td>{{ company.name }}</td>
+                        <td>{{ company.referral_code }}</td>
+                        <td>
+                            <input type="text" class="form-control" value="{{ url_for('handle_referral', referral_code=company.referral_code, _external=True) }}" readonly>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

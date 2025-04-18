@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Responses for {{ form.title }}</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Response Summary</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Total Responses</h6>
+                            <p class="card-text display-6">{{ responses|length }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Companies</h6>
+                            <p class="card-text display-6">{{ responses|map(attribute='company')|unique|list|length }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Latest Response</h6>
+                            <p class="card-text">{{ responses|sort(attribute='submitted_at')|last|attr('submitted_at')|datetime }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Detailed Responses</h5>
+            <div>
+                <button class="btn btn-sm btn-primary" onclick="exportToCSV()">Export to CSV</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="responsesTable">
+                    <thead>
+                        <tr>
+                            <th>Submission Date</th>
+                            <th>Company</th>
+                            {% for question in form.questions %}
+                            <th>{{ question.question_text }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for response in responses %}
+                        <tr>
+                            <td>{{ response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ response.company.name if response.company else 'N/A' }}</td>
+                            {% for question in form.questions %}
+                            <td>
+                                {% set answer = response.answers|selectattr('question_id', 'equalto', question.id)|first %}
+                                {% if question.question_type == 'checkbox' %}
+                                    {{ answer.answer_text.split(', ') if answer else []|join(', ') }}
+                                {% else %}
+                                    {{ answer.answer_text if answer else 'N/A' }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+function exportToCSV() {
+    const table = document.getElementById('responsesTable');
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+    
+    // Get headers
+    const headers = [];
+    table.querySelectorAll('th').forEach(th => headers.push(th.textContent));
+    csv.push(headers.join(','));
+    
+    // Get data
+    for (let i = 1; i < rows.length; i++) {
+        const row = [];
+        rows[i].querySelectorAll('td').forEach(td => {
+            // Handle special characters and commas
+            let text = td.textContent.trim();
+            if (text.includes(',') || text.includes('"')) {
+                text = `"${text.replace(/"/g, '""')}"`;
+            }
+            row.push(text);
+        });
+        csv.push(row.join(','));
+    }
+    
+    // Create download link
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = '{{ form.title }}_responses.csv';
+    link.click();
+}
+</script>
+{% endblock %} 
